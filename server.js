@@ -31,18 +31,15 @@ const LIMITS = {
 // CORS
 // ============================================================
 app.use(cors({
-    origin: function (origin, callback) {
-        // Разрешаем запросы без origin (мобильные, Postman и т.д.)
-        if (!origin) return callback(null, true);
-        if (ALLOWED_ORIGINS.includes(origin)) {
-            return callback(null, true);
-        }
-        // В разработке разрешаем все
-        if (process.env.NODE_ENV !== 'production') {
-            return callback(null, true);
-        }
-        callback(new Error('CORS не разрешён'));
-    },
+    origin: [
+        'https://givboxai.pages.dev',
+        'https://www.givboxai.pages.dev',
+        'http://localhost:3000',
+        'http://localhost:5500',
+        'http://127.0.0.1:5500'
+    ],
+    methods: ['GET', 'POST', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'X-User-Fingerprint'],
     credentials: true
 }));
 
@@ -383,4 +380,5 @@ app.listen(PORT, () => {
     console.log(`   API Key: ${API_KEY ? 'SET' : 'MISSING!'}`);
     console.log(`   Limits: ${LIMITS.MAX_REQUESTS_PER_DAY}/day, ${LIMITS.MAX_REQUESTS_PER_HOUR}/hour`);
     console.log('========================================');
+
 });
