@@ -4,7 +4,7 @@ const crypto = require('crypto');
 
 const app = express();
 const API_KEY = process.env.API_KEY;
-const MODEL = "meta-llama/llama-3.3-70b-instruct:free";
+const MODEL = "google/gemini-2.0-flash-exp:free";
 const PORT = process.env.PORT || 3000;
 
 const LIMITS = {
@@ -25,35 +25,31 @@ const ALLOWED_ORIGINS = [
 
 app.use(cors({
     origin: function(origin, callback) {
-        // Разрешаем запросы без origin (например, curl, серверные запросы)
-        // Если хочешь блокировать и их — убери эту проверку
         if (!origin) {
             return callback(null, false);
         }
         if (ALLOWED_ORIGINS.includes(origin)) {
             return callback(null, true);
         }
-        return callback(new Error('Доступ запрещён (CORS)'), false);
+        return callback(new Error('CORS'), false);
     },
     methods: ['GET', 'POST', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'X-User-Fingerprint'],
     credentials: true
 }));
 
-// Обработка preflight запросов
 app.options('*', cors({
     origin: function(origin, callback) {
         if (!origin || ALLOWED_ORIGINS.includes(origin)) {
             return callback(null, true);
         }
-        return callback(new Error('Доступ запрещён (CORS)'), false);
+        return callback(new Error('CORS'), false);
     }
 }));
 
-// Обработка ошибок CORS
 app.use(function(err, req, res, next) {
-    if (err.message === 'Доступ запрещён (CORS)') {
-        return res.status(403).json({ error: true, message: 'Доступ запрещён' });
+    if (err.message === 'CORS') {
+        return res.status(403).json({ error: true, message: 'Forbidden' });
     }
     next(err);
 });
@@ -67,12 +63,15 @@ const DEFAULT_SYSTEM_PROMPT = [
     "Ты GIV BOX AI. Ты полезный помощник. Думай, как будто ты PRO версия. В каждом коде, в начале пиши в формате комментария как by GIV BOX AI (Только 1 раз пиши в коде)"
 ]
 
+// =============================================
+// Пользователи и лимиты
+// =============================================
 const users = new Map();
 
 function getUserId(req) {
-    const ip = (req.headers['x-forwarded-for'] || req.connection.remoteAddress || '').split(',')[0].trim();
-    const fp = req.headers['x-user-fingerprint'] || '';
-    const ua = req.headers['user-agent'] || '';
+    var ip = (req.headers['x-forwarded-for'] || req.connection.remoteAddress || '').split(',')[0].trim();
+    var fp = req.headers['x-user-fingerprint'] || '';
+    var ua = req.headers['user-agent'] || '';
     return crypto.createHash('sha256').update(ip + '_' + fp + '_' + ua).digest('hex').substring(0, 16);
 }
 
@@ -117,6 +116,9 @@ function recordRequest(userId) {
     u.requests = u.requests.filter(function(t) { return t > now - 90000000; });
 }
 
+// =============================================
+// Роуты
+// =============================================
 app.get('/', function(req, res) {
     res.json({ status: 'ok', service: 'GIV BOX AI Proxy', activeUsers: users.size, uptime: Math.floor(process.uptime()) + 's' });
 });
@@ -151,7 +153,7 @@ app.post('/api/chat', async function(req, res) {
         var controller = new AbortController();
         var timeout = setTimeout(function() { controller.abort(); }, 30000);
 
-        // Формируем массив сообщений для API
+        // Формируем сообщения для API
         var apiMessages = [
             { role: 'system', content: systemPrompt || DEFAULT_SYSTEM_PROMPT }
         ].concat(
@@ -174,7 +176,11 @@ app.post('/api/chat', async function(req, res) {
             },
             body: JSON.stringify({
                 model: MODEL,
-                messages: apiMessages
+                messages: apiMessages,
+                provider: {
+                    allow_fallbacks: false,
+                    require_parameters: false
+                }
             })
         });
 
@@ -207,6 +213,9 @@ app.post('/api/chat', async function(req, res) {
     }
 });
 
+// =============================================
+// Очистка старых данных
+// =============================================
 setInterval(function() {
     var cutoff = Date.now() - 90000000;
     for (var entry of users.entries()) {
@@ -217,25 +226,7 @@ setInterval(function() {
     }
 }, 3600000);
 
-body: JSON.stringify({
-    model: MODEL,
-    messages: apiMessages,
-    // ✅ Только бесплатные роуты
-    provider: {
-        allow_fallbacks: false,
-        require_parameters: false
-    }
-})
-
 app.listen(PORT, function() {
     console.log('GIV BOX AI Proxy running on port ' + PORT);
     console.log('API Key: ' + (API_KEY ? 'SET' : 'MISSING!'));
 });
-
-
-
-
-
-
-
-
