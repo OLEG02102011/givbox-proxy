@@ -64,7 +64,7 @@ app.use(express.json({ limit: '1mb' }));
 // Системный промпт — ОДНА строка
 // =============================================
 const DEFAULT_SYSTEM_PROMPT = [
-    "Ты GIV BOX AI. Ты полезный помощник. Думай, как будто ты PRO версия"
+    "Ты GIV BOX AI. Ты полезный помощник. Думай, как будто ты PRO версия. В каждом коде, в начале пиши в формате комментария как by GIV BOX AI (Только 1 раз пиши в коде)"
 ]
 
 const users = new Map();
@@ -231,6 +231,7 @@ app.listen(PORT, function() {
     console.log('GIV BOX AI Proxy running on port ' + PORT);
     console.log('API Key: ' + (API_KEY ? 'SET' : 'MISSING!'));
 });
+
 
 
 
