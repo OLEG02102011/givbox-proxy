@@ -4,7 +4,7 @@ const crypto = require('crypto');
 
 const app = express();
 const API_KEY = process.env.API_KEY;
-const MODEL = "qwen/qwen3-coder:free";
+const MODEL = "meta-llama/llama-3.1-8b-instruct:free";
 const PORT = process.env.PORT || 3000;
 
 const LIMITS = {
@@ -390,6 +390,7 @@ app.listen(PORT, function() {
     console.log('GIV BOX AI Proxy running on port ' + PORT);
     console.log('API Key: ' + (API_KEY ? 'SET' : 'MISSING!'));
 });
+
 
 
 
