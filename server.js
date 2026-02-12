@@ -386,10 +386,21 @@ setInterval(function() {
     }
 }, 3600000);
 
+body: JSON.stringify({
+    model: MODEL,
+    messages: apiMessages,
+    // ✅ Только бесплатные роуты
+    provider: {
+        allow_fallbacks: false,
+        require_parameters: false
+    }
+})
+
 app.listen(PORT, function() {
     console.log('GIV BOX AI Proxy running on port ' + PORT);
     console.log('API Key: ' + (API_KEY ? 'SET' : 'MISSING!'));
 });
+
 
 
 
